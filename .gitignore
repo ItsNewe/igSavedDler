@@ -1,6 +1,8 @@
 /node_modules/
 /public/build/
-/.vscode/
-
+/.vscode
 .DS_Store
-*.log
+.env
+*.map
+*.json
+main.js
