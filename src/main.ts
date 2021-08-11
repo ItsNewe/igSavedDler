@@ -22,28 +22,26 @@ function loadSeshFromFile(path){
 	//fs.access and fs.writeFile callbacks won't run for some reason, fallign back to synchronous alternatives
 	try{
 		fs.accessSync(path);
-	} catch(e){
+	}catch(e){
 		console.error(e);
 		return null;
 	}
 
 	try{
-		let data:string= fs.readFileSync(path, 'utf-8');
-
+		let data:string=fs.readFileSync(path, 'utf-8');
 		if(data.length==0){
 			return null;
 		} else {
 			return JSON.parse(data);
 		}
-	}
-	catch(e){
+	}catch(e){
 		return null;
 	}
 	
 }
 
 async function validateSessionFile(){
-
+	//TODO
 }
 
 client.state.generateDevice("saturn");
@@ -52,17 +50,21 @@ console.debug("Generated device");
 console.info("AUTH...");
 
 try {
-
+	
+	//Save up-to-date auth cookies after each request
 	client.request.end$.subscribe(async () => {
 		const serialized = await client.state.serialize();
-		delete serialized.constants; // this deletes the version info, so you'll always use the version provided by the library
+		delete serialized.constants;
 		seshToFile(serialized);
-	  });
+	});
 
 	let sessionData=loadSeshFromFile("./session.json");
+
+	//TODO:move integrity checks to ValidateSessionfile()
 	if(sessionData!=null || typeof sessionData!=="undefined"){
 		console.debug("logged in using sessionData");
 		await client.state.deserialize(sessionData);
+
 	} else {
 		console.debug("logged in with creds");
 		await client.simulate.preLoginFlow();
@@ -84,7 +86,6 @@ try {
 	}
 
 };
-
 
 user ? console.log("AUTH OK") : console.log("NO");
 
