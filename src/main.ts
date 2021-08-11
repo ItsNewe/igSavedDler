@@ -3,13 +3,14 @@ import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as readline from "readline";
 
+const SESSIONPATH="src/session.json"
 dotenv.config();
 
 let client = new IgApiClient();
 let user;
 
 function seshToFile(data){
-	fs.writeFile("session.json", JSON.stringify(data), (e)=>{
+	fs.writeFile(SESSIONPATH, JSON.stringify(data), (e)=>{
 		if(e){
 			console.error(e);
 			return false;
@@ -18,17 +19,17 @@ function seshToFile(data){
 	return true;
 }
 
-function loadSeshFromFile(path){
+function loadSeshFromFile(){
 	//fs.access and fs.writeFile callbacks won't run for some reason, fallign back to synchronous alternatives
 	try{
-		fs.accessSync(path);
+		fs.accessSync(SESSIONPATH);
 	}catch(e){
 		console.error(e);
 		return null;
 	}
 
 	try{
-		let data:string=fs.readFileSync(path, 'utf-8');
+		let data:string=fs.readFileSync(SESSIONPATH, 'utf-8');
 		if(data.length==0){
 			return null;
 		} else {
@@ -58,7 +59,7 @@ try {
 		seshToFile(serialized);
 	});
 
-	let sessionData=loadSeshFromFile("./session.json");
+	let sessionData=loadSeshFromFile();
 
 	//TODO:move integrity checks to ValidateSessionfile()
 	if(sessionData!=null || typeof sessionData!=="undefined"){
@@ -69,6 +70,8 @@ try {
 		console.debug("logged in with creds");
 		await client.simulate.preLoginFlow();
 		user = await client.account.login(process.env.USERNAME, process.env.PW);
+		console.log("Finishing login process, please wait...")
+		await client.simulate.postLoginFlow();
 	}
 	
 } catch (e){
@@ -89,16 +92,12 @@ try {
 
 user ? console.log("AUTH OK") : console.log("NO");
 
-console.log("Finishing login process, please wait...")
-await client.simulate.postLoginFlow();
-
 //Retrieve the saved feed
-
 const savedFeed = client.feed.saved();
-console.info("parsing saved posts");
 let media=[];
-
 let e=0;
+console.info("parsing saved posts");
+
 do{
 	let items = await savedFeed.items();
 
@@ -142,7 +141,6 @@ do{
 
 const ws = fs.createWriteStream("output.json");
 console.log("Created/opened output.json for writing");
-
 
 ws.write(JSON.stringify(media, null, "\t"), "utf-8");
 ws.end();
