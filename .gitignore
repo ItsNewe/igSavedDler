@@ -1,8 +1,15 @@
+#Directories
 /node_modules/
 /public/build/
 /.vscode
+/files/
+
+#Files
 .DS_Store
 .env
+yarn-error.log
+
+#File types
 *.map
 *.json
-main.js
+*.js
