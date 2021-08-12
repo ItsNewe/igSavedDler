@@ -2,7 +2,6 @@ import { IgApiClient, IgLoginTwoFactorRequiredError, SavedFeedResponseCarouselMe
 import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as readline from "readline";
-
 const SESSIONPATH="src/session.json"
 dotenv.config();
 
@@ -90,12 +89,14 @@ try {
 
 };
 
-user ? console.log("AUTH OK") : console.log("NO");
+//user ? console.log("AUTH OK") : console.log("NO");
 
 //Retrieve the saved feed
 const savedFeed = client.feed.saved();
 let media=[];
-let e=0;
+let currentPostIndex:number=0;
+
+
 console.info("parsing saved posts");
 
 do{
@@ -104,45 +105,56 @@ do{
 	//v=post
 	items.forEach((v, i)=>{
 		let workingContent=[];
-		let urls:Array<string>=[];
+		let urls:Array<object>=[];
 		let mediaCount:number=null;
 		let username:string=null;
 		let l:number=null;
 
-		 v.hasOwnProperty("carousel_media")? (()=>{
-			workingContent=v.carousel_media; //Cast the carousel object to match workingContent's type
+		readline.clearLine(process.stdout, 0);
+		console.log(`[${currentPostIndex}] Processing post`);
+
+		//Check ifthe post is a carousel
+		v.hasOwnProperty("carousel_media")? (()=>{
+			workingContent=v.carousel_media;
 			username=v.user.username;
 			mediaCount=v.carousel_media_count;
 			})():workingContent=[v];
 			
-
-		//TODO:differentiate between carousels and regular posts, to group them
-		workingContent.forEach((j, idx)=>{
+		workingContent.forEach((j, idx)=>{	
 			//MEDIA TYPES: 1=picture, 2=video
 			if(j.media_type==1){
-				urls.push(j.image_versions2.candidates[0].url);
+				urls.push({"type":1, "url":j.image_versions2.candidates[0].url});
 			} else if (j.media_type==2){
-				urls.push(j.video_versions[0].url);
+				urls.push({"type":2, "url":j.video_versions[0].url});
 			}
 
 			//Carousel posts contain multiple urls per post, so we should only push to the array once we've got all the carousel media urls
 			if(!mediaCount || (mediaCount && idx==mediaCount-1)){
 				media.push({
-					"caption": j.caption!=null? j.caption.text:null,
-					"username": username? username: j.user.username,
-					"urls":urls
+					"timestamp":j.taken_at,
+					"index":currentPostIndex,
+					"caption": j.caption!=null? j.caption.text : null,
+					"username": username? username : j.user.username,
+					"media":urls
 				});
 				urls=[];
+				currentPostIndex++;
 			}
 		});
 		
 	});
-} while(e>0);
+} while(savedFeed.isMoreAvailable());
 
 const ws = fs.createWriteStream("output.json");
 console.log("Created/opened output.json for writing");
 
-ws.write(JSON.stringify(media, null, "\t"), "utf-8");
+const final:object={
+	"account":process.env.USERNAME,
+	"items":currentPostIndex,
+	"media":media
+}
+
+ws.write(JSON.stringify(final, null, "\t"), "utf-8");
 ws.end();
 ws.on("finish", ()=>{console.log("done")});
 
@@ -150,3 +162,4 @@ ws.on("finish", ()=>{console.log("done")});
 async function doDl(){
 
 }
+
