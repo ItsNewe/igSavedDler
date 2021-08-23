@@ -13,3 +13,12 @@ yarn-error.log
 *.map
 *.json
 *.js
+
+#Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
