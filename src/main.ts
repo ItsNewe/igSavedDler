@@ -87,7 +87,8 @@ export class igInteractionModule {
 				return -1;
 			}
 		};
-
+	}
+		async parseSaved(){
 		//user ? console.log("AUTH OK") : console.log("NO");
 
 		//Retrieve the saved feed
